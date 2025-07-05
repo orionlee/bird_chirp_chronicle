@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="icon" type="image/png" href="assets/icon-bird-simple.png"/>
+        <link rel="shortcut icon" type="image/png" href="assets/icon-bird-simple.png"/>
+        <style>
+            * {
+                font-family: sans-serif;
+            }
+
+            body {
+                margin-left: 12px;
+            }
+
+            #spectrograms_ctr {
+                margin-left: 24px;
+                margin-top: 12px;
+                margin-bottom: 24px;
+            }
+
+            #spectrograms_ctr img {
+                border: 1px lightgray dotted;
+                margin: 0;
+                padding: 0;
+                margin-bottom: -5px;
+                cursor: pointer;
+                vertical-align: bottom;
+            }
+
+            .thumbnail_header {
+                font-size: 80%;
+                width: 5ch;
+                display: inline-block;
+                color: #333;
+            }
+
+            #details_popin_ctr {
+                position: fixed;
+                top: 0;
+                left: 0;
+                z-index: 10;
+                background-color: rgba(225, 225, 212, 0.9);
+                padding: 24px;
+                padding-top: 48px;
+                height: 100vh;
+                width: 100;
+                min-width: 100vw;
+            }
+
+            #close_popin_btn {
+                border-radius: 6px;
+                font-weight: bold;
+                font-family: 'Arial Black', 'Arial';
+                padding: 2px 6px;
+                cursor: pointer;
+            }
+
+            .progress_marker {
+                background: transparent;
+                pointer-events: none;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                max-height: 100%;
+            }
+
+            footer {
+                font-size: 70%;
+            }
+        </style>
+
+    </head>
+    <body>
+        <h1><img src="assets/icon-bird-simple.png">Bird Chirp Chronicle</h1>
+        <div id="spectrograms_ctr">
+        </div>
+        <div id="details_popin_ctr" style="display: none;">
+            <div>
+                <button id="close_popin_btn">X</button>
+            </div>
+            <div id="details_body"></div>
+        </div>
+        <footer>
+            The bird icon Author: <a href="https://commons.wikimedia.org/wiki/File:Map_marker_icon_%E2%80%93_Nicolas_Mollet_%E2%80%93_Birds_%E2%80%93_Nature_%E2%80%93_simple.png">Nicolas Mollet</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0">CC BY-SA 3.0</a>, via Wikimedia Commons.
+        </footer>
+
+        <script type="text/javascript">
+all_filenames = [
+    "Track-4_20250519_0612",
+    "Track-5_20250520_0517",
+    "Track-7_20250521_0613",
+    "Track-8_20250522_0618",
+    "Track-9_20250523_0608",
+    "Track-10_20250624_0611",
+    "Track-11_20250625_0610",
+    "Track-12_20250526_0630",
+    "Track-13_20250527_0621",
+    "Track-14_20250528_0506",
+    "Track-15_20250529_0600",
+    "Track-16_20250530_0615",
+    "Track-17_20250531_0606",
+    "Track-18_20250601_0611",
+    "Track-19_20250602_0626",
+    "Track-20_20250603_0615",
+    "Track-21_20250604_0634",
+    "Track-22_20250605_0603",
+    "Track-23_20250606_0538",
+    "Track-24_20250607_0521",
+    "Track-25_20250608_0607",
+    "Track-26_20250609_0601",
+    "Track-27_20250610_0621",
+    "Track-28_20250611_0635",
+    "Track-29_20250612_0616",
+    "Track-30_20250613_0624",
+    "Track-32_20250614_0635",
+    "Track-33_20250615_0630",
+    "Track-34_20250616_0639",
+    "Track-35_20250617_0612",
+    "Track-36_20250618_0634",
+    "Track-38_20250619_0608",
+    "Track-39_20250620_0658",
+    "Track-40_20250621_0636",
+    "Track-41_20250622_0616",
+    "Track-42_20250623_0609",
+    "Track-43_20250624_0620",
+    "Track-44_20250625_0659",
+    "Track-45_20250626_0559",
+    "Track-46_20250627_0608",
+    "Track-47_20250628_0605",
+    "Track-48_20250629_0620",
+    "Track-49_20250630_0600",
+    "Track-50_20250701_0612",
+    "Track-51_20250702_0611",
+    "Track-52_20250703_0636",
+    "Track-53_20250704_0609",
+];
+
+
+function parse_filebase(filebase) {
+    let [yyyy, mm, dd, hh, mi] = ['', '', '', '', ''];
+    const matches = filebase.match(/_(\d\d\d\d)(\d\d)(\d\d)_(\d\d)(\d\d)/);
+    if (matches) {
+        [_, yyyy, mm, dd, hh, mi] = matches;
+    }
+    return [yyyy, mm, dd, hh, mi];
+}
+
+
+function show_spectrograms_all() {
+    out_html = "";
+    for (const [i, filebase] of all_filenames.entries()) {
+        const [yyyy, mm, dd, hh, mi] = parse_filebase(filebase);
+        let header_str = '';
+        if (i == 0 || i == all_filenames.length - 1 || dd == '01' || dd == '15') {
+            header_str = `${mm}-${dd}`;
+        }
+        out_html += `\n
+<span class="thumbnail_header">${header_str}</span>
+<img src="recordings/spectrograms/${filebase}_thumbnail.png" title="${yyyy}-${mm}-${dd}" data-filebase="${filebase}"><br>
+`;
+    }
+    document.getElementById('spectrograms_ctr').innerHTML = out_html;
+}
+show_spectrograms_all();
+
+
+function show_popin_with(filebase) {
+    const [yyyy, mm, dd, hh, mi] = parse_filebase(filebase);
+
+    const popin_html = `\
+<h3>${yyyy}-${mm}-${dd} ${hh}:${mi}</h3>
+<div>
+    <div style="width: 1000px;">
+        <svg class="progress-marker" viewBox="0 0 1000 100">
+            <image xlink:href="recordings/spectrograms/${filebase}.png" width="1000", height="100"></image>
+            <g fill="transparent" stroke="red" stroke-width="3" >
+                <line x1="0%" y1="0%" x2="0%" y2="100%" id="progress-line"></line>
+            </g>
+        </svg>
+    </div>
+    <audio src="recordings/${filebase}.wav" controls style="width: 90%;"></audio>
+</div>
+`;
+    document.getElementById('details_body').innerHTML = popin_html;
+    document.getElementById('details_popin_ctr').style.display = 'block';
+    const audEl = document.querySelector('#details_body audio');
+    const pl = document.getElementById('progress-line');
+    audEl.addEventListener("timeupdate", (evt) => {
+        const progress_pct_str = 100 * audEl.currentTime / audEl.duration + "%";
+        pl.setAttribute('x1', progress_pct_str); pl.setAttribute('x2', progress_pct_str);
+    });
+}
+
+function init_popin() {
+    document.getElementById('close_popin_btn').onclick = (evt) => {
+        document.getElementById('details_popin_ctr').style.display = 'none';
+        document.getElementById('details_body').innerHTML = "";
+    };
+
+    document.getElementById('spectrograms_ctr').onclick = (evt) => {
+        const target = evt.target;
+        if (target.tagName != 'IMG') {
+            return;
+        }
+        const filebase = target.dataset.filebase;
+        show_popin_with(filebase);
+
+    };
+    // show_popin_with("Track-4_20250519_0612");  // for testing
+}
+init_popin();
+        </script>
+    </body>
+</html>
