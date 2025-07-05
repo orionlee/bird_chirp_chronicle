@@ -12,6 +12,11 @@
                 margin-left: 12px;
             }
 
+            h1.title {
+                background-color: rgba(127, 255, 127, 0.5);
+                padding: 6px;
+            }
+
             #spectrograms_ctr {
                 margin-left: 24px;
                 margin-top: 12px;
@@ -65,14 +70,19 @@
                 max-height: 100%;
             }
 
+            #details_desc {
+                font-size: 90%;
+            }
+
             footer {
                 font-size: 70%;
             }
         </style>
-
+        <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
     </head>
     <body>
-        <h1><img src="assets/icon-bird-simple.png">Bird Chirp Chronicle</h1>
+        <h1 class="title"><img src="assets/icon-bird-simple.png">Bird Chirp Chronicle</h1>
+        <!-- TODO: add some general descriptions -->
         <div id="spectrograms_ctr">
         </div>
         <div id="details_popin_ctr" style="display: none;">
@@ -86,55 +96,74 @@
         </footer>
 
         <script type="text/javascript">
-all_filenames = [
-    "Track-4_20250519_0612",
-    "Track-5_20250520_0517",
-    "Track-7_20250521_0613",
-    "Track-8_20250522_0618",
-    "Track-9_20250523_0608",
-    "Track-10_20250624_0611",
-    "Track-11_20250625_0610",
-    "Track-12_20250526_0630",
-    "Track-13_20250527_0621",
-    "Track-14_20250528_0506",
-    "Track-15_20250529_0600",
-    "Track-16_20250530_0615",
-    "Track-17_20250531_0606",
-    "Track-18_20250601_0611",
-    "Track-19_20250602_0626",
-    "Track-20_20250603_0615",
-    "Track-21_20250604_0634",
-    "Track-22_20250605_0603",
-    "Track-23_20250606_0538",
-    "Track-24_20250607_0521",
-    "Track-25_20250608_0607",
-    "Track-26_20250609_0601",
-    "Track-27_20250610_0621",
-    "Track-28_20250611_0635",
-    "Track-29_20250612_0616",
-    "Track-30_20250613_0624",
-    "Track-32_20250614_0635",
-    "Track-33_20250615_0630",
-    "Track-34_20250616_0639",
-    "Track-35_20250617_0612",
-    "Track-36_20250618_0634",
-    "Track-38_20250619_0608",
-    "Track-39_20250620_0658",
-    "Track-40_20250621_0636",
-    "Track-41_20250622_0616",
-    "Track-42_20250623_0609",
-    "Track-43_20250624_0620",
-    "Track-44_20250625_0659",
-    "Track-45_20250626_0559",
-    "Track-46_20250627_0608",
-    "Track-47_20250628_0605",
-    "Track-48_20250629_0620",
-    "Track-49_20250630_0600",
-    "Track-50_20250701_0612",
-    "Track-51_20250702_0611",
-    "Track-52_20250703_0636",
-    "Track-53_20250704_0609",
-];
+all_meta_str = `\
+Observation	Merlin Bird ID	BirdNet	My ID	Comment
+Track-4_20250519_0612	Bewick's Wren, Bushtit, American Crow		Bewick's Wren, Bushtit, American Crow	American Crow: 1 call at the end
+Track-5_20250520_0517	Dark-eyed Junco, Bewick's Wren, Song Sparrow, American Crow, Spotted Towhee		Bewick's Wren?, Dark-eyed Junco, Song Sparrow?, American Crow
+Track-7_20250521_0613	Bewick's Wren, Western Tanager, Bushtit, American Robin 		Bewick's Wren?, Bushtit	After a rain shower.
+Track-8_20250522_0618	American Robin, Bushtit, Bewick's Wren, Black-capped Chickadee, American Crow, House Finch, Song Sparrow, House Sparrow		American Robin, Bushtit, American Crow
+Track-9_20250523_0608	American Robin, Bewick's Wren, Spotted Towhee		American Robin
+Track-10_20250624_0611	Bewick's Wren, American Crow, American Robin, Red-breasted Nuthatch		Bewick's Wren?, American Crow
+Track-11_20250625_0610	American Robin, American Crow		American Robin, American Crow, Bushtit?, ?	Bushtit possibly at 0:03,0:50. Unidentifified species at 0:16,0:23,0:43 .
+Track-12_20250526_0630	Golden-crowned Kinglet, Bewick's Wren, American Robin, Bushtit, American Crow		Bewick's Wren, Bushtit, American Robin
+Track-13_20250527_0621	Bewick's Wren, Steller's Jay, American Crow		Bewick's Wren, Steller's Jay?
+Track-14_20250528_0506	Bewick's Wren, Song Sparrow, American Crow, Mallard, Dark-eyed Junco		Bewick's Wren, American Crow, Mallard
+Track-15_20250529_0600	Red-winged Blackbird 		?	Raining, recording quality poor.
+Track-16_20250530_0615	Bewick's Wren, Golden-crowned Kinglet, Steller's Jay, American Robin, American Crow, Spotted Towhee		Bewick's Wren, Golden-crowned Kinglet, Steller's Jay, American Crow, American Robin, Spotted Towhee	Bewick's Wren & Golden-crowned Kinglet largely ignored one another, and would at times sang over one another.
+Track-17_20250531_0606	Bewick's Wren, American Crow, Black-capped Chickadee		Bewick's Wren, American Crow, Black-capped Chickadee?
+Track-18_20250601_0611	Bewick's Wren, Golden-crowned Kinglet, Chestnut-backed Chickadee		Golden-crowned Kinglet, Bewick's Wren
+Track-19_20250602_0626	Golden-crowned Kinglet, Song Sparrow, House Finch, Bewick's Wren		Golden-crowned Kinglet, House Finch, Bewick's Wren
+Track-20_20250603_0615	Bewick's Wren, Wilson's Warbler, Chestnut-backed Chickadee, House Finch, White-crowned Sparrow		Bewick's Wren, Wilson's Warbler, Chestnut-backed Chickadee?, House Finch
+Track-21_20250604_0634	Golden-crowned Kinglet, Dark-eyed Junco, American Crow		Golden-crowned Kinglet, Dark-eyed Junco, American Crow
+Track-22_20250605_0603	Bewick's Wren, American Crow, American Robin		Bewick's Wren, American Crow
+Track-23_20250606_0538	Spotted Towhee, Song Sparrow, Chestnut-backed Chickadee		?	Only sparse faint sound of which I couldn't identify.
+Track-24_20250607_0521	Bewick's Wren, Spotted Towhee, Song Sparrow, American Robin, American Crow		Song Sparrow, Bewick's Wren, Spotted Towhee, American Crow
+Track-25_20250608_0607	Bewick's Wren, Dark-eyed Junco, American Crow, House Finch		Bewick's Wren, Dark-eyed Junco, American Crow
+Track-26_20250609_0601	Chestnut-backed Chickadee, American Crow, House Finch		American Crow, Chestnut-backed Chickadee, House Finch	Faint.
+Track-27_20250610_0621	Bewick's Wren, White-crowned Sparrow, American Crow		Bewick's Wren, White-crowned Sparrow, American Crow
+Track-28_20250611_0635	None		?	Sparse, very faint unidentified bird sound, not captured by the recording.
+Track-29_20250612_0616	Steller's Jay, Bewick's Wren		Steller's Jay, Bewick's Wren	Sparse sound.
+Track-30_20250613_0624	Dark-eyed Junco, American Crow, Bewick's Wren		Dark-eyed Junco, American Crow, Bewick's Wren, Downy Woodpecker	Downy Woodpecker possibly at 0:06
+Track-32_20250614_0635	Bushtit, American Crow, Cedar Waxwing, Black-capped Chickadee		Black-capped Chickadee, Bushtit?, American Crow	Black-capped Chickadee was much clearer and more frequent than the recording (eg, 20s, 26s, 56s). Cedar Waxwing sound Merlin IDed might be Bushtit.
+Track-33_20250615_0630	American Crow, Bewick's Wren, American Robin		Bewick's Wren, American Crow, American Robin
+Track-34_20250616_0639	Bewick's Wren, Bushtit		Bewick's Wren, Bushtit?
+Track-35_20250617_0612	American Crow, Song Sparrow, Bewick's Wren, Black-capped Chickadee		American Crow, Bewick's Wren?, Black-capped Chickadee	Unsure if the recurring faint sound (0:10, 0:15, etc) is Bewick's Wren. The tempo is a bit slow.
+Track-36_20250618_0634	Chestnut-backed Chickadee, Song Sparrow		Chestnut-backed Chickadee, Song Sparrow, Bushtit	Faint.
+Track-38_20250619_0608	American Crow, Hooded Merganser		American Crow	Faint
+Track-39_20250620_0658	None		Goose, ?	Some unidentified species too. All too faint to be in the recording.
+Track-40_20250621_0636	None		None	Raining. Faint American Robin, Steller's Jay, and American Crow minutes after the recording.
+Track-41_20250622_0616	American Crow		American Crow, American Robin, Bushtit?
+Track-42_20250623_0609	American Crow, Spotted Towhee, Chestnut-backed Chickadee, American Robin		American Crow, Spotted Towhee, American Robin, Chestnut-backed Chickadee?	Faint American Robin was more frequent than what the recording captured.
+Track-43_20250624_0620	Dark-eyed Junco		Dark-eyed Junco, American Robin, American Crow, ? 	And some unidentified species. All faint. The recording only captured Dark-eyed Junco.
+Track-44_20250625_0659	American Crow, Chestnut-backed Chickadee, House Finch, Black-capped Chickadee		American Crow, Black-capped Chickadee, House Finch?, Chestnut-backed Chickadee?, ?	Faint. Some unidentified species too.
+Track-45_20250626_0559	Chestnut-backed Chickadee, Black-capped Chickadee, American Crow		Chestnut-backed Chickadee, Black-capped Chickadee, Steller's Jay, American Crow
+Track-46_20250627_0608	Bewick's Wren, American Crow, Steller's Jay		Bewick's Wren, American Crow, Steller's Jay
+Track-47_20250628_0605	Bewick's Wren, Spotted Towhee		Bewick's Wren, Spotted Towhee, ?	Some faint unidentified species not captured by the recording.
+Track-48_20250629_0620	American Crow, Song Sparrow, Red-breasted Nuthatch		American Robin, American Crow, Bewick's Wren, Song Sparrow	Faint. American Robin not captured by the recording.
+Track-49_20250630_0600	Song Sparrow, Chestnut-backed Chickadee, Golden-crowned Kinglet		Golden-crowned Kinglet, Song Sparrow, Steller's Jay, American Crow, Chestnut-backed Chickadee?	Faint. American Crow not captured by the recording.
+Track-50_20250701_0612	Bewick's Wren, Dark-eyed Junco, American Crow, Hutton's Vireo, Mallard, Steller's Jay		Bewick's Wren, Dark-eyed Junco, American Crow, Steller's Jay, American Robin, ?	Merlin IDed 33-36s as Mallard. I don't know what it is. Faint American Robin not captured by the recording.
+Track-51_20250702_0611	Song Sparrow, House Finch, Cedar Waxwing		Song Sparrow?, House Finch	There's a persistent sound that's similar to Bushtit. It could be a flight call from Song Sparrow.
+Track-52_20250703_0636	Spotted Towhee, Black-capped Chickadee, American Crow, Steller's Jay		Spotted Towhee, Black-capped Chickadee?, American Crow, Steller's Jay	Possibly 2 different Spotted Towhee vocalizations. The louder one at 2,7,13s..., and the fainter one at 4,15,20,25s... The sound at 9-10s might be a blend of Black-capped Chickadee and Spotted Towhee.
+Track-53_20250704_0609	Golden-crowned Kinglet, Chestnut-backed Chickadee, Bewick's Wren, Bushtit		Golden-crowned Kinglet, Bewick's Wren, Chestnut-backed Chickadee?, American Crow	Faint American Crow.
+`;
+
+function parse_meta_str(meta_str) {
+    const config = {delimiter: '\t', header: true, skipEmptyLines: true};
+    const parsed = Papa.parse(meta_str, config);
+    const meta_dict = {}
+    const filebases = []
+    for (const a_observation of parsed.data) {
+        if (a_observation['Comment'] === undefined) {
+            a_observation['Comment'] = '';
+        }
+        meta_dict[a_observation['Observation']] = a_observation;
+        filebases.push(a_observation['Observation'])
+    }
+    return [meta_dict, filebases];
+
+}
+
+const [all_meta, all_filebases] = parse_meta_str(all_meta_str);
 
 
 function parse_filebase(filebase) {
@@ -148,11 +177,12 @@ function parse_filebase(filebase) {
 
 
 function show_spectrograms_all() {
+    const filebases = all_filebases; // in case I want to reverse, subset, etc.
     out_html = "";
-    for (const [i, filebase] of all_filenames.entries()) {
+    for (const [i, filebase] of filebases.entries()) {
         const [yyyy, mm, dd, hh, mi] = parse_filebase(filebase);
         let header_str = '';
-        if (i == 0 || i == all_filenames.length - 1 || dd == '01' || dd == '15') {
+        if (i == 0 || i == filebases.length - 1 || dd == '01' || dd == '15') {
             header_str = `${mm}-${dd}`;
         }
         out_html += `\n
@@ -167,7 +197,13 @@ show_spectrograms_all();
 
 function show_popin_with(filebase) {
     const [yyyy, mm, dd, hh, mi] = parse_filebase(filebase);
+    const meta = all_meta[filebase];
 
+    // TODO: link species to sites describing it, e.g.,
+    // https://www.allaboutbirds.org/guide/American_Crow/
+    // https://www.allaboutbirds.org/news/search/?q=Bushtit
+    // No easy way to link to Peterson Guide, so maybe add a general link:
+    // https://academy.allaboutbirds.org/peterson-field-guide-to-bird-sounds/
     const popin_html = `\
 <h3>${yyyy}-${mm}-${dd} ${hh}:${mi}</h3>
 <div>
@@ -181,7 +217,22 @@ function show_popin_with(filebase) {
     </div>
     <audio src="recordings/${filebase}.wav" controls style="width: 90%;"></audio>
 </div>
+<div id="details_desc">
+    <dl>
+        <dt>Merlin ID</dt>
+        <dd>${meta['Merlin Bird ID']}</dd>
+    </dl>
+    <dl>
+        <dt>My ID</dt>
+        <dd>${meta['My ID']}</dd>
+    </dl>
+    <dl>
+        <dt>Note</dt>
+        <dd>${meta['Comment']}</dd>
+    </dl>
+</div>
 `;
+
     document.getElementById('details_body').innerHTML = popin_html;
     document.getElementById('details_popin_ctr').style.display = 'block';
     const audEl = document.querySelector('#details_body audio');
